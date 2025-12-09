@@ -86,3 +86,12 @@ class GenerateVideoRequest(BaseModel):
 class GenerateVideoResponse(BaseModel):
     video_url: str
     audio_url: str
+    job_id: Optional[str] = None
+    status: Optional[str] = None
+
+
+class HeygenStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    video_url: Optional[str] = None
+    raw: Optional[dict] = None

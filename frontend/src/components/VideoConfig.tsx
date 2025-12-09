@@ -12,6 +12,10 @@ interface VideoConfigProps {
   generatingVideo: boolean;
   videoUrl?: string;
   audioUrl?: string;
+  jobId?: string;
+  videoStatus?: string;
+  onPollStatus: () => void;
+  isPolling: boolean;
   disabled?: boolean;
 }
 
@@ -27,6 +31,10 @@ export function VideoConfig({
   generatingVideo,
   videoUrl,
   audioUrl,
+  jobId,
+  videoStatus,
+  onPollStatus,
+  isPolling,
   disabled
 }: VideoConfigProps) {
   const updateVoice = (key: keyof VoiceConfig) => (event: React.ChangeEvent<HTMLSelectElement>) =>
@@ -85,6 +93,22 @@ export function VideoConfig({
           {generatingVideo ? "视频生成中..." : "生成预览视频"}
         </button>
       </div>
+
+      {(jobId || videoStatus) && (
+        <div style={{ marginTop: 12, padding: 14, borderRadius: 12, background: "#e0f2fe", color: "#0f172a" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <span className="chip">视频生成进度</span>
+            {isPolling && <span style={{ fontSize: 12, color: "#0369a1" }}>轮询中...</span>}
+          </div>
+          <p style={{ margin: "4px 0" }}>job_id: {jobId || "无"}</p>
+          <p style={{ margin: "4px 0" }}>状态: {videoStatus || "未开始"}</p>
+          {jobId && (
+            <button className="secondary" onClick={onPollStatus} style={{ marginTop: 8 }} disabled={isPolling}>
+              {isPolling ? "查询中..." : "手动刷新状态"}
+            </button>
+          )}
+        </div>
+      )}
 
       {script && (
         <div style={{ marginTop: 24, background: "#0f172a", color: "#e2e8f0", borderRadius: 16, padding: 20 }}>

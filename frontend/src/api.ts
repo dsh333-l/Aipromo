@@ -5,7 +5,8 @@ import {
   ScriptResponse,
   VideoResponse,
   VoiceConfig,
-  VideoScript
+  VideoScript,
+  VideoStatusResponse
 } from "./types";
 
 const API_BASE = "";
@@ -83,5 +84,16 @@ export async function generateVideo(
     throw new Error(`视频生成失败：${response.statusText}`);
   }
 
+  return response.json();
+}
+
+export async function getVideoStatus(videoId: string): Promise<VideoStatusResponse> {
+  const response = await fetch(`${API_BASE}/api/video_status?video_id=${encodeURIComponent(videoId)}`, {
+    method: "GET",
+    headers: jsonHeaders
+  });
+  if (!response.ok) {
+    throw new Error(`查询视频状态失败：${response.statusText}`);
+  }
   return response.json();
 }

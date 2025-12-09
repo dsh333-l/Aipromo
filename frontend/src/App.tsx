@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import AnalysisPanel from "./components/AnalysisPanel";
 import ProductForm from "./components/ProductForm";
 import VideoConfig from "./components/VideoConfig";
-import { analyzeProduct, generateScript, generateVideo } from "./api";
+import { analyzeProduct, generateScript, generateVideo, getVideoStatus } from "./api";
 import {
   AnalysisFormData,
   PainPointCard,
@@ -42,6 +42,15 @@ function App() {
   const [script, setScript] = useState<VideoScript | undefined>();
   const [videoUrl, setVideoUrl] = useState<string | undefined>();
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
+  const [jobId, setJobId] = useState<string | undefined>();
+  const [videoStatus, setVideoStatus] = useState<string | undefined>();
+  const [isPolling, setIsPolling] = useState(false);
+  useEffect(() => {
+    if (jobId && (!videoUrl || videoUrl.includes("video_status"))) {
+      pollVideoStatus(jobId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
@@ -56,6 +65,8 @@ function App() {
       setScript(undefined);
       setVideoUrl(undefined);
       setAudioUrl(undefined);
+      setJobId(undefined);
+      setVideoStatus(undefined);
 
       const response = await analyzeProduct(formData);
       setCards(response.cards);
@@ -73,6 +84,8 @@ function App() {
     setScript(undefined);
     setVideoUrl(undefined);
     setAudioUrl(undefined);
+    setJobId(undefined);
+    setVideoStatus(undefined);
   };
 
   const toggleSave = (cardId: string) => {
@@ -112,12 +125,37 @@ function App() {
       const response = await generateVideo(script, voiceConfig, videoStyle);
       setVideoUrl(response.video_url);
       setAudioUrl(response.audio_url);
+      setJobId(response.job_id);
+      setVideoStatus(response.status);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setErrorMessage(message);
     } finally {
       setIsVideoLoading(false);
     }
+  };
+
+  const pollVideoStatus = (currentJobId: string, attempt = 0) => {
+    const maxAttempts = 12;
+    setIsPolling(true);
+    getVideoStatus(currentJobId)
+      .then((res) => {
+        setVideoStatus(res.status);
+        if (res.video_url) {
+          setVideoUrl(res.video_url);
+          setIsPolling(false);
+          return;
+        }
+        if (attempt < maxAttempts) {
+          setTimeout(() => pollVideoStatus(currentJobId, attempt + 1), 4000);
+        } else {
+          setIsPolling(false);
+        }
+      })
+      .catch((err) => {
+        setVideoStatus(err instanceof Error ? err.message : String(err));
+        setIsPolling(false);
+      });
   };
 
   const jumpToVideoStep = () => {
@@ -145,6 +183,10 @@ function App() {
           generatingVideo={isVideoLoading}
           videoUrl={videoUrl}
           audioUrl={audioUrl}
+          jobId={jobId}
+          videoStatus={videoStatus}
+          onPollStatus={() => jobId && pollVideoStatus(jobId)}
+          isPolling={isPolling}
         />
       ) : (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>

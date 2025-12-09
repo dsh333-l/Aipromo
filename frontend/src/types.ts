@@ -54,4 +54,13 @@ export interface ScriptResponse {
 export interface VideoResponse {
   video_url: string;
   audio_url: string;
+  job_id?: string;
+  status?: string;
+}
+
+export interface VideoStatusResponse {
+  job_id: string;
+  status: string;
+  video_url?: string;
+  raw?: Record<string, unknown>;
 }

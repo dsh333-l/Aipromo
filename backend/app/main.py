@@ -11,9 +11,10 @@ from .models import (
     GenerateVideoResponse,
     ProductAnalysisRequest,
     ProductAnalysisResponse,
+    HeygenStatusResponse,
 )
 from .services.ai import analyze_product, generate_video_script
-from .services.video import ASSETS_DIR, generate_video_assets
+from .services.video import ASSETS_DIR, generate_video_assets, check_heygen_status
 
 
 app = FastAPI(
@@ -47,11 +48,21 @@ def script(req: GenerateScriptRequest) -> GenerateScriptResponse:
 @app.post("/api/generate_video", response_model=GenerateVideoResponse)
 def video(req: GenerateVideoRequest) -> GenerateVideoResponse:
     try:
-        video_path, audio_path = generate_video_assets(req)
+        video_path, audio_path, job_id = generate_video_assets(req)
     except Exception as exc:  # pragma: no cover - logging stub
         raise HTTPException(status_code=500, detail=f"视频生成失败: {exc}") from exc
 
+    video_url = video_path if isinstance(video_path, str) else f"/generated/{video_path.name}"
+    audio_url = audio_path if isinstance(audio_path, str) else f"/generated/{audio_path.name}"
+
     return GenerateVideoResponse(
-        video_url=f"/generated/{video_path.name}",
-        audio_url=f"/generated/{audio_path.name}",
+        video_url=video_url,
+        audio_url=audio_url,
+        job_id=job_id,
+        status="queued" if job_id else None,
     )
+
+
+@app.get("/api/video_status", response_model=HeygenStatusResponse)
+def video_status(video_id: str) -> HeygenStatusResponse:
+    return check_heygen_status(video_id)
