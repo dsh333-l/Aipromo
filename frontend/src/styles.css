@@ -1,8 +1,7 @@
 :root {
-  color-scheme: light dark;
   font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
-  color: #222;
-  background-color: #f8fafc;
+  color: #0a1f63;
+  background-color: #0f2d78;
 }
 
 * {
@@ -11,6 +10,9 @@
 
 body {
   margin: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 30%),
+    radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.05), transparent 28%),
+    #0f2d78;
 }
 
 a {
@@ -21,21 +23,23 @@ a {
   display: flex;
   min-height: 100vh;
   gap: 24px;
-  padding: 24px;
-  background: radial-gradient(circle at top left, #f1f5f9, #e2e8f0);
+  padding: 32px;
+  background: linear-gradient(160deg, #0f2d78 0%, #0a1f63 40%, #0f2d78 100%);
 }
 
 .panel {
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(8, 29, 99, 0.3);
   padding: 24px;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(6px);
 }
 
 .left-panel {
-  width: 360px;
+  width: 380px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .right-panel {
@@ -43,6 +47,29 @@ a {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.brand-banner {
+  background: linear-gradient(135deg, #103c9b, #0a1f63);
+  color: #fff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.brand-banner img {
+  height: 32px;
+  object-fit: contain;
+}
+
+.brand-banner .tagline {
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-size: 14px;
+  opacity: 0.92;
 }
 
 .cards-grid {
@@ -61,22 +88,22 @@ a {
 button {
   border-radius: 12px;
   font-size: 15px;
-  font-weight: 600;
-  padding: 10px 16px;
+  font-weight: 700;
+  padding: 11px 16px;
   border: none;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 button.primary {
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  background: linear-gradient(135deg, #1e5bff, #0f2d78);
   color: #fff;
-  box-shadow: 0 12px 20px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 12px 24px rgba(15, 45, 120, 0.4);
 }
 
 button.secondary {
-  background: #e2e8f0;
-  color: #1e293b;
+  background: #e6ecfa;
+  color: #0f2d78;
 }
 
 button:disabled {
@@ -87,8 +114,8 @@ button:disabled {
 
 label {
   font-size: 14px;
-  font-weight: 600;
-  color: #1e293b;
+  font-weight: 700;
+  color: #0f2d78;
   margin-bottom: 6px;
 }
 
@@ -96,13 +123,13 @@ input,
 textarea,
 select {
   width: 100%;
-  border: 1px solid #cbd5f5;
+  border: 1px solid #cdd6f3;
   border-radius: 12px;
   padding: 10px 12px;
   font-size: 14px;
   font-family: inherit;
-  background: rgba(255, 255, 255, 0.85);
-  margin-bottom: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  margin-bottom: 16px;
 }
 
 textarea {
@@ -111,9 +138,9 @@ textarea {
 
 .section-title {
   font-size: 18px;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 16px;
+  font-weight: 800;
+  color: #0a1f63;
+  margin-bottom: 12px;
 }
 
 .chip {
@@ -122,34 +149,34 @@ textarea {
   gap: 6px;
   padding: 6px 10px;
   border-radius: 999px;
-  background-color: #e0f2fe;
-  color: #0369a1;
+  background-color: #e0e9ff;
+  color: #0f2d78;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .badge-success {
-  background-color: #dcfce7;
-  color: #15803d;
+  background-color: #d1f5dc;
+  color: #0f6a2f;
 }
 
 .stepper {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .step-pill {
   padding: 6px 12px;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: #e6ecfa;
   font-size: 13px;
-  font-weight: 600;
-  color: #475569;
+  font-weight: 700;
+  color: #0f2d78;
 }
 
 .step-pill.active {
-  background: linear-gradient(135deg, #9333ea, #6366f1);
+  background: linear-gradient(135deg, #1e5bff, #0f2d78);
   color: #ffffff;
-  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 10px 24px rgba(15, 45, 120, 0.3);
 }

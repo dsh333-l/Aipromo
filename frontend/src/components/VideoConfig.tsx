@@ -42,6 +42,10 @@ export function VideoConfig({
 
   return (
     <div className="panel right-panel">
+      <div className="brand-banner" style={{ marginBottom: 10 }}>
+        <img src="/amberg.png" alt="AMBERG Logo" />
+        <span className="tagline">主动健康门窗 · 品质严选</span>
+      </div>
       <div className="stepper">
         <span className="step-pill">Step 1 · 产品输入</span>
         <span className="step-pill">Step 2 · AI 分析</span>

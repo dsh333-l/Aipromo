@@ -29,6 +29,10 @@ export function ProductForm({
 
   return (
     <div className="panel left-panel">
+      <div className="brand-banner">
+        <img src="/amberg.png" alt="AMBERG Logo" />
+        <span className="tagline">主动健康门窗 · 品质严选</span>
+      </div>
       <div className="stepper">
         <span className="step-pill active">Step 1 · 产品输入</span>
         <span className="step-pill">Step 2 · AI 分析</span>
