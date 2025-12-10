@@ -1,17 +1,31 @@
 import { ChangeEvent } from "react";
 import { AnalysisFormData } from "../types";
+import { WindowModel } from "../data/windows/models";
 
 interface ProductFormProps {
   value: AnalysisFormData;
   onChange: (data: AnalysisFormData) => void;
   onAnalyze: () => void;
   isAnalyzing: boolean;
+  windowModels: WindowModel[];
+  selectedWindowId: string;
+  onSelectWindow: (id: string) => void;
 }
 
-export function ProductForm({ value, onChange, onAnalyze, isAnalyzing }: ProductFormProps) {
+export function ProductForm({
+  value,
+  onChange,
+  onAnalyze,
+  isAnalyzing,
+  windowModels,
+  selectedWindowId,
+  onSelectWindow,
+}: ProductFormProps) {
   const updateField = (key: keyof AnalysisFormData) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     onChange({ ...value, [key]: event.target.value });
   };
+
+  const selectedWindow = windowModels.find((item) => item.id === selectedWindowId);
 
   return (
     <div className="panel left-panel">
@@ -20,30 +34,58 @@ export function ProductForm({ value, onChange, onAnalyze, isAnalyzing }: Product
         <span className="step-pill">Step 2 · AI 分析</span>
         <span className="step-pill">Step 3 · 视频生成</span>
       </div>
-      <h2 className="section-title">基础信息</h2>
+      <h2 className="section-title">门窗产品信息</h2>
+
+      <label>门窗型号</label>
+      <select value={selectedWindowId} onChange={(e) => onSelectWindow(e.target.value)}>
+        {windowModels.map((model) => (
+          <option key={model.id} value={model.id}>
+            {model.name}
+          </option>
+        ))}
+      </select>
+
+      {selectedWindow && (
+        <div style={{ marginBottom: 16, padding: 12, borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+          <p style={{ margin: "4px 0", fontWeight: 700 }}>{selectedWindow.name}</p>
+          <p style={{ margin: "4px 0", fontSize: 13, color: "#475569" }}>窗型：{selectedWindow.windowType}</p>
+          <ul style={{ margin: "6px 0 0 16px", padding: 0, fontSize: 13, color: "#334155", lineHeight: 1.5 }}>
+            <li>铝材：{selectedWindow.aluminum}</li>
+            <li>喷涂：{selectedWindow.coating}</li>
+            <li>开启方式：{selectedWindow.opening}</li>
+            <li>玻璃：{selectedWindow.glass}</li>
+            <li>五金：{selectedWindow.hardware}</li>
+            <li>纱窗：{selectedWindow.screen}</li>
+            <li>密封：{selectedWindow.seal}</li>
+            <li>排水：{selectedWindow.drainage}</li>
+            <li>气密/水密/抗风压：{selectedWindow.airTightness}/{selectedWindow.waterTightness}/{selectedWindow.pressureResistance}</li>
+          </ul>
+        </div>
+      )}
+
       <label>产品名称</label>
-      <input placeholder="零食食品生产" value={value.productName} onChange={updateField("productName")} />
+      <input placeholder="门窗型号名称" value={value.productName} onChange={updateField("productName")} />
 
       <label>你的身份</label>
-      <input placeholder="工厂老板 / 代理商 / 运营" value={value.persona} onChange={updateField("persona")} />
+      <input placeholder="门窗厂老板 / 经销商 / 设计师" value={value.persona} onChange={updateField("persona")} />
 
       <label>你想吸引谁</label>
-      <input placeholder="零食供应链商" value={value.targetCustomer} onChange={updateField("targetCustomer")} />
+      <input placeholder="门窗渠道商 / 工程客户 / 设计院" value={value.targetCustomer} onChange={updateField("targetCustomer")} />
 
       <label>受众人群</label>
       <select value={value.audienceType} onChange={updateField("audienceType")}>
-        <option value="B端">B 端</option>
-        <option value="C端">C 端</option>
+        <option value="B端">B 端（工程/渠道）</option>
+        <option value="C端">C 端（家装/零售）</option>
       </select>
 
-      <label>产品关键词</label>
+      <label>产品关键词（自动带入，可编辑）</label>
       <textarea
-        placeholder="零食供应链、办公零食、零食厂家..."
+        placeholder="铝合金、隐藏排水、德国五金..."
         value={value.productKeywords}
         onChange={updateField("productKeywords")}
       />
 
-      <label>补充信息（可选）</label>
+      <label>补充信息（可选，默认带入型号规格）</label>
       <textarea placeholder="渠道现状 / 竞争对手 / 诉求..." value={value.additionalContext ?? ""} onChange={updateField("additionalContext")} />
 
       <div className="cta-footer">

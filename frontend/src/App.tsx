@@ -9,13 +9,14 @@ import {
   VoiceConfig,
   VideoScript
 } from "./types";
+import { WINDOW_MODELS } from "./data/windows/models";
 
 const defaultForm: AnalysisFormData = {
-  productName: "零食食品生产",
-  persona: "工厂老板",
-  targetCustomer: "零食供应链商",
+  productName: WINDOW_MODELS[0]?.name || "门窗产品",
+  persona: "门窗厂老板",
+  targetCustomer: "门窗渠道商 / 工程客户",
   audienceType: "B端",
-  productKeywords: "零食供应链\nOEM 代工\n食品安全"
+  productKeywords: WINDOW_MODELS[0]?.keywords.join("\n") || "铝合金门窗"
 };
 
 const defaultVoice: VoiceConfig = {
@@ -31,6 +32,7 @@ function App() {
   const [cards, setCards] = useState<PainPointCard[]>([]);
   const [selectedCard, setSelectedCard] = useState<PainPointCard | null>(null);
   const [currentStep, setCurrentStep] = useState<Step>(1);
+  const [selectedWindowId, setSelectedWindowId] = useState<string>(WINDOW_MODELS[0]?.id || "");
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isScriptLoading, setIsScriptLoading] = useState(false);
@@ -45,6 +47,29 @@ function App() {
   const [jobId, setJobId] = useState<string | undefined>();
   const [videoStatus, setVideoStatus] = useState<string | undefined>();
   const [isPolling, setIsPolling] = useState(false);
+  const buildWindowContext = (model: (typeof WINDOW_MODELS)[number]) => {
+    const specLines = [
+      `窗型：${model.windowType}`,
+      `铝材：${model.aluminum}`,
+      `喷涂：${model.coating}`,
+      `开启方式：${model.opening}`,
+      `玻璃：${model.glass}`,
+      `五金：${model.hardware}`,
+      `执手：${model.handle}`,
+      `纱窗：${model.screen}`,
+      `密封：${model.seal}`,
+      `排水：${model.drainage}`,
+      `水密/气密/抗风压：${model.waterTightness}/${model.airTightness}/${model.pressureResistance}`,
+      `隔音/保温：${model.soundInsulation}/${model.insulation}`,
+      `可视面：${model.visibleWidth}`,
+      `颜色：木{${model.colorWood}} 铝{${model.colorAluminum}}`,
+      `玻璃护栏：${model.glassRailing}`,
+      `护角：${model.cornerGuard}`,
+      `水性漆：${model.paint}`,
+    ];
+    return specLines.join("\n");
+  };
+
   useEffect(() => {
     if (jobId && (!videoUrl || videoUrl.includes("video_status"))) {
       pollVideoStatus(jobId);
@@ -52,11 +77,36 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
+  useEffect(() => {
+    const model = WINDOW_MODELS.find((item) => item.id === selectedWindowId);
+    if (model) {
+      setFormData((prev) => ({
+        ...prev,
+        productName: model.name,
+        productKeywords: model.keywords.join("\n"),
+        additionalContext: buildWindowContext(model),
+      }));
+    }
+  }, [selectedWindowId]);
+
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const canProceedToVideo = useMemo(() => !!selectedCard, [selectedCard]);
 
   const handleAnalyze = async () => {
+    let formForRequest = formData;
+    if (selectedWindowId) {
+      const model = WINDOW_MODELS.find((item) => item.id === selectedWindowId);
+      if (model) {
+        formForRequest = {
+          ...formData,
+          productName: model.name,
+          productKeywords: model.keywords.join("\n"),
+          additionalContext: buildWindowContext(model),
+        };
+        setFormData(formForRequest);
+      }
+    }
     try {
       setIsAnalyzing(true);
       setErrorMessage(undefined);
@@ -68,7 +118,7 @@ function App() {
       setJobId(undefined);
       setVideoStatus(undefined);
 
-      const response = await analyzeProduct(formData);
+      const response = await analyzeProduct(formForRequest);
       setCards(response.cards);
       setCurrentStep(2);
     } catch (error) {
@@ -168,7 +218,15 @@ function App() {
 
   return (
     <div className="app-shell">
-      <ProductForm value={formData} onChange={setFormData} onAnalyze={handleAnalyze} isAnalyzing={isAnalyzing} />
+      <ProductForm
+        value={formData}
+        onChange={setFormData}
+        onAnalyze={handleAnalyze}
+        isAnalyzing={isAnalyzing}
+        windowModels={WINDOW_MODELS}
+        selectedWindowId={selectedWindowId}
+        onSelectWindow={setSelectedWindowId}
+      />
 
       {currentStep === 3 ? (
         <VideoConfig
