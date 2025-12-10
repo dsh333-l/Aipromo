@@ -20,6 +20,8 @@ from .llm import extract_json_block, llm_client
 
 SYSTEM_PROMPT = """你是一名资深 ToB 品牌策略师，擅长拆解工厂、供应链、渠道的真实痛点，并生成结构化营销方案。需要保证输出内容可直接落在营销系统中。"""
 
+BRAND_DECLARATION = "瑞明门窗，稳定交付，安全可信，共创增长"
+
 ANALYSIS_PROMPT = """输入信息：
 - 产品名称：{product_name}
 - 用户身份：{persona}
@@ -61,13 +63,16 @@ SCRIPT_PROMPT = """已选卡片信息：
     {{
       "title": "Scene 1",
       "visuals": "画面描述 + 调度",
-      "voice_over": "口播文案，符合配音语言",
+      "voice_over": "口播文案，符合配音语言，完整自然，不要出现“Scene”/镜头编号等提示词",
       "screen_text": "屏幕文字或字幕"
     }}
   ]
 }}
 
-请确保 3~5 个分镜，画面描述能支撑对应视频风格。"""
+要求：
+- 只生成口播自然表达，不要在 voice_over 里出现 “Scene”/“镜头” 等提示词。
+- 画面描述配合视频风格，但旁白保持连贯口语。
+- 3~5 个分镜即可。"""
 
 
 PAIN_POINT_PATTERNS = [
@@ -128,8 +133,14 @@ def _build_marketing_copies(title: str, scenario: str, pain_point: str, solution
             pain_point=pain_point,
             solution=solution,
         )
-        copies.append(MarketingCopy(channel=channel, copy=text))
+        copies.append(MarketingCopy(channel=channel, copy=_wrap_brand_tag(text)))
     return copies
+
+
+def _wrap_brand_tag(text: str) -> str:
+    if BRAND_DECLARATION in text:
+        return text
+    return f"{BRAND_DECLARATION}\n{text}\n{BRAND_DECLARATION}"
 
 
 def _parse_llm_cards(raw_cards: Sequence[dict]) -> List[PainPointCard]:
@@ -164,7 +175,7 @@ def _parse_llm_cards(raw_cards: Sequence[dict]) -> List[PainPointCard]:
                 scenario=scenario,
                 pain_point=pain_point,
                 solution=solution,
-                recommended_copies=copies,
+                recommended_copies=[MarketingCopy(channel=c.channel, copy=_wrap_brand_tag(c.copy)) for c in copies],
             )
         )
     return cards
@@ -235,6 +246,8 @@ def _parse_llm_script(data: dict) -> VideoScript | None:
     for idx, scene in enumerate(scenes_raw, start=1):
         visuals = scene.get("visuals")
         voice_over = scene.get("voice_over") or scene.get("voiceOver")
+        if isinstance(voice_over, str):
+            voice_over = voice_over.replace("Scene", "").replace("镜头", "").strip("：: ").strip()
         screen_text = scene.get("screen_text") or scene.get("screenText")
         title = scene.get("title") or f"Scene {idx}"
         if not (visuals and voice_over):
@@ -244,7 +257,7 @@ def _parse_llm_script(data: dict) -> VideoScript | None:
                 id=idx,
                 title=title,
                 visuals=visuals,
-                voice_over=voice_over,
+                voice_over=_wrap_brand_tag(voice_over),
                 screen_text=screen_text or textwrap.shorten(visuals, 32),
             )
         )
@@ -271,7 +284,7 @@ def _fallback_script(req: GenerateScriptRequest) -> VideoScript:
                 id=idx,
                 title=f"Scene {idx}",
                 visuals=hint,
-                voice_over=voice_over,
+                voice_over=_wrap_brand_tag(voice_over),
                 screen_text=textwrap.shorten(card.solution, width=36, placeholder="..."),
             )
         )
@@ -303,7 +316,17 @@ def generate_video_script(req: GenerateScriptRequest) -> VideoScript:
             parsed = json.loads(extract_json_block(response.content))
             script = _parse_llm_script(parsed)
             if script:
-                return script
+                wrapped = [
+                    Scene(
+                        id=s.id,
+                        title=s.title,
+                        visuals=s.visuals,
+                        voice_over=_wrap_brand_tag(s.voice_over),
+                        screen_text=s.screen_text,
+                    )
+                    for s in script.scenes
+                ]
+                return VideoScript(headline=script.headline, scenes=wrapped)
         except Exception:
             pass
 

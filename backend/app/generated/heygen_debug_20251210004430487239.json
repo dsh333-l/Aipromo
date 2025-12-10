@@ -1,0 +1,26 @@
+{
+  "error": "404 Client Error: NOT FOUND for url: https://api.heygen.com/v2/video/generate",
+  "hint": "检查 HEYGEN_API_URL 与 payload 是否符合官方文档（示例: https://api.heygen.com/v2/video/generate）",
+  "endpoint": "https://api.heygen.com/v2/video/generate",
+  "payload": {
+    "title": "提升产品安全是首要任务",
+    "video_inputs": [
+      {
+        "character": {
+          "type": "avatar",
+          "avatar_id": "Miyu Office Front",
+          "avatar_style": "normal"
+        },
+        "voice": {
+          "type": "text",
+          "input_text": "瑞明门窗，稳定交付，安全可信，共创增长\n在食品行业，安全与品质是我们永恒的承诺。我们深知，只有把产品安全放在首位，才能赢得客户的信任。\n瑞明门窗，稳定交付，安全可信，共创增长\n瑞明门窗，稳定交付，安全可信，共创增长\n我们对原材料的选择严格把关，每一批原材料都经过层层筛选，确保它们的安全性和最佳品质。\n瑞明门窗，稳定交付，安全可信，共创增长\n瑞明门窗，稳定交付，安全可信，共创增长\n整个生产流程中，我们都配备了先进的监控设备，确保每个环节都符合高标准的质检流程。\n瑞明门窗，稳定交付，安全可信，共创增长\n瑞明门窗，稳定交付，安全可信，共创增长\n最终，经过层层把关的产品，才能自信地走向市场，满足每一位消费者的需求。\n瑞明门窗，稳定交付，安全可信，共创增长",
+          "voice_id": "119caed25533477ba63822d5d1552d25"
+        }
+      }
+    ],
+    "dimension": {
+      "width": 1280,
+      "height": 720
+    }
+  }
+}

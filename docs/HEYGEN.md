@@ -11,6 +11,7 @@
  - `HEYGEN_AVATAR_ID`：可选，指定数字人形象，未设置默认使用官方 demo `Lina_Dress_Sitting_Side_public`。
  - `HEYGEN_AVATAR_STYLE`：可选，默认 `normal`。
  - `HEYGEN_VOICE_ID`：可选，指定配音 ID，未设置默认使用官方 demo `119caed25533477ba63822d5d1552d25`。
+ - `HEYGEN_BRAND_LOGO_URL`：可选，品牌 LOGO，接口支持时会透传到生成视频（字段为 `logo_url`）。
  - `HEYGEN_CALLBACK_URL`：可选，生成完成后的回调地址。
  - `HEYGEN_TEST_MODE`：可选，设为 `true` 切换到测试模式（如果 HeyGen 支持）。
  - `HEYGEN_BACKGROUND_MUSIC_ID`：可选，设置背景音乐。

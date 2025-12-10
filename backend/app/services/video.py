@@ -13,6 +13,7 @@ from ..models import GenerateVideoRequest, HeygenStatusResponse
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / "generated"
 ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+BRAND_DECLARATION = os.getenv("BRAND_DECLARATION", "瑞明门窗，稳定交付，安全可信，共创增长")
 
 
 def _timestamp_slug() -> str:
@@ -26,10 +27,18 @@ def _write_placeholder(path: Path, content: str) -> Path:
 
 def _build_heygen_payload(req: GenerateVideoRequest) -> dict:
     script = req.script
-    # 将分镜旁白合并成文本，适配 HeyGen v2 video.generate 的 text voice 输入
-    full_text = "\n".join(f"{scene.title}: {scene.voice_over}" for scene in script.scenes)
+    # 直接生成口播文案：去掉重复的品牌宣言，仅在全文末尾附加一次
+    voice_lines = []
+    for scene in script.scenes:
+        cleaned = scene.voice_over.replace(BRAND_DECLARATION, "").strip()
+        if cleaned:
+            voice_lines.append(cleaned)
 
-    avatar_id = os.getenv("HEYGEN_AVATAR_ID", "Lina_Dress_Sitting_Side_public")
+    full_text = "\n".join(voice_lines).strip()
+    if BRAND_DECLARATION:
+        full_text = f"{full_text}\n{BRAND_DECLARATION}"
+
+    avatar_id = os.getenv("HEYGEN_AVATAR_ID", "Miyu_standing_office_front")
     avatar_style = os.getenv("HEYGEN_AVATAR_STYLE", "normal")
     voice_id = os.getenv("HEYGEN_VOICE_ID", "119caed25533477ba63822d5d1552d25")
 
@@ -54,6 +63,9 @@ def _build_heygen_payload(req: GenerateVideoRequest) -> dict:
 
     if os.getenv("HEYGEN_BACKGROUND_MUSIC_ID"):
         payload["background"] = {"music_id": os.getenv("HEYGEN_BACKGROUND_MUSIC_ID")}
+
+    if os.getenv("HEYGEN_BRAND_LOGO_URL"):
+        payload["logo_url"] = os.getenv("HEYGEN_BRAND_LOGO_URL")
 
     if os.getenv("HEYGEN_CALLBACK_URL"):
         payload["callback_url"] = os.getenv("HEYGEN_CALLBACK_URL")
