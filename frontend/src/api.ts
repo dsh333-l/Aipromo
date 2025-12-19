@@ -9,7 +9,7 @@ import {
   VideoStatusResponse
 } from "./types";
 
-const API_BASE = "";
+const API_BASE = "/api";
 
 const jsonHeaders = {
   "Content-Type": "application/json"
