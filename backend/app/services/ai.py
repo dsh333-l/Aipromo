@@ -133,14 +133,8 @@ def _build_marketing_copies(title: str, scenario: str, pain_point: str, solution
             pain_point=pain_point,
             solution=solution,
         )
-        copies.append(MarketingCopy(channel=channel, copy=_wrap_brand_tag(text)))
+        copies.append(MarketingCopy(channel=channel, copy=text))
     return copies
-
-
-def _wrap_brand_tag(text: str) -> str:
-    if BRAND_DECLARATION in text:
-        return text
-    return f"{BRAND_DECLARATION}\n{text}\n{BRAND_DECLARATION}"
 
 
 def _parse_llm_cards(raw_cards: Sequence[dict]) -> List[PainPointCard]:
@@ -175,7 +169,7 @@ def _parse_llm_cards(raw_cards: Sequence[dict]) -> List[PainPointCard]:
                 scenario=scenario,
                 pain_point=pain_point,
                 solution=solution,
-                recommended_copies=[MarketingCopy(channel=c.channel, copy=_wrap_brand_tag(c.copy)) for c in copies],
+                recommended_copies=[MarketingCopy(channel=c.channel, copy=c.copy) for c in copies],
             )
         )
     return cards
@@ -257,7 +251,7 @@ def _parse_llm_script(data: dict) -> VideoScript | None:
                 id=idx,
                 title=title,
                 visuals=visuals,
-                voice_over=_wrap_brand_tag(voice_over),
+                voice_over=voice_over,
                 screen_text=screen_text or textwrap.shorten(visuals, 32),
             )
         )
@@ -284,7 +278,7 @@ def _fallback_script(req: GenerateScriptRequest) -> VideoScript:
                 id=idx,
                 title=f"Scene {idx}",
                 visuals=hint,
-                voice_over=_wrap_brand_tag(voice_over),
+                voice_over=voice_over,
                 screen_text=textwrap.shorten(card.solution, width=36, placeholder="..."),
             )
         )
@@ -321,7 +315,7 @@ def generate_video_script(req: GenerateScriptRequest) -> VideoScript:
                         id=s.id,
                         title=s.title,
                         visuals=s.visuals,
-                        voice_over=_wrap_brand_tag(s.voice_over),
+                        voice_over=s.voice_over,
                         screen_text=s.screen_text,
                     )
                     for s in script.scenes
