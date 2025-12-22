@@ -9,11 +9,13 @@ from .models import (
     GenerateScriptResponse,
     GenerateVideoRequest,
     GenerateVideoResponse,
+    GenerateXhsRequest,
+    GenerateXhsResponse,
     ProductAnalysisRequest,
     ProductAnalysisResponse,
     HeygenStatusResponse,
 )
-from .services.ai import analyze_product, generate_video_script
+from .services.ai import analyze_product, generate_video_script, generate_xhs_copies
 from .services.video import ASSETS_DIR, generate_video_assets, check_heygen_status
 
 
@@ -43,6 +45,11 @@ def analyze(req: ProductAnalysisRequest) -> ProductAnalysisResponse:
 def script(req: GenerateScriptRequest) -> GenerateScriptResponse:
     script = generate_video_script(req)
     return GenerateScriptResponse(script=script)
+
+
+@app.post("/api/generate_xhs", response_model=GenerateXhsResponse)
+def generate_xhs(req: GenerateXhsRequest) -> GenerateXhsResponse:
+    return generate_xhs_copies(req)
 
 
 @app.post("/api/generate_video", response_model=GenerateVideoResponse)

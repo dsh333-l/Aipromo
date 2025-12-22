@@ -27,16 +27,30 @@ class LLMClient:
     def is_configured(self) -> bool:
         return bool(self.api_key)
 
-    def chat(self, messages: List[Dict[str, str]], temperature: float = 0.7) -> LLMResponse:
-        if not self.api_key:
-            raise RuntimeError("OPENAI_API_KEY 未配置，无法调用真实模型。")
+    def chat(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        provider: Optional[str] = None,
+    ) -> LLMResponse:
+        if provider and provider.lower() == "deepseek":
+            api_key = os.getenv("DEEPSEEK_API_KEY")
+            base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+            model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+        else:
+            api_key = self.api_key
+            base_url = self.base_url
+            model = self.model
 
-        url = f"{self.base_url.rstrip('/')}/chat/completions"
+        if not api_key:
+            raise RuntimeError("LLM API Key 未配置，无法调用真实模型。")
+
+        url = f"{base_url.rstrip('/')}/chat/completions"
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
-        payload = {"model": self.model, "messages": messages, "temperature": temperature}
+        payload = {"model": model, "messages": messages, "temperature": temperature}
 
         response = requests.post(url, json=payload, headers=headers, timeout=self.timeout)
         response.raise_for_status()

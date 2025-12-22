@@ -6,9 +6,17 @@ interface AnalysisPanelProps {
   onSelect: (card: PainPointCard) => void;
   onToggleSave: (cardId: string) => void;
   isLoading: boolean;
+  publishPlatform?: "short_video" | "xhs";
 }
 
-export function AnalysisPanel({ cards, selectedCardId, onSelect, onToggleSave, isLoading }: AnalysisPanelProps) {
+export function AnalysisPanel({
+  cards,
+  selectedCardId,
+  onSelect,
+  onToggleSave,
+  isLoading,
+  publishPlatform,
+}: AnalysisPanelProps) {
   return (
     <div className="panel right-panel">
       <div className="brand-banner" style={{ marginBottom: 10 }}>
@@ -18,7 +26,7 @@ export function AnalysisPanel({ cards, selectedCardId, onSelect, onToggleSave, i
       <div className="stepper">
         <span className="step-pill">Step 1 · 产品输入</span>
         <span className="step-pill active">Step 2 · AI 分析</span>
-        <span className="step-pill">Step 3 · 视频生成</span>
+        <span className="step-pill">Step 3 · {publishPlatform === "xhs" ? "小红书文案" : "视频生成"}</span>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -72,7 +80,7 @@ export function AnalysisPanel({ cards, selectedCardId, onSelect, onToggleSave, i
                   {card.recommended_copies.map((copy) => (
                     <li key={copy.channel}>
                       <strong>{copy.channel}：</strong>
-                      {copy.copy}
+                      {copy.ad_copy || copy.copy}
                     </li>
                   ))}
                 </ul>

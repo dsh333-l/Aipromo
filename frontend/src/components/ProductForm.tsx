@@ -36,7 +36,9 @@ export function ProductForm({
       <div className="stepper">
         <span className="step-pill active">Step 1 · 产品输入</span>
         <span className="step-pill">Step 2 · AI 分析</span>
-        <span className="step-pill">Step 3 · 视频生成</span>
+        <span className="step-pill">
+          Step 3 · {value.publishPlatform === "xhs" ? "小红书文案" : "视频生成"}
+        </span>
       </div>
       <h2 className="section-title">门窗产品信息</h2>
 
@@ -70,17 +72,25 @@ export function ProductForm({
       <label>产品名称</label>
       <input placeholder="门窗型号名称" value={value.productName} onChange={updateField("productName")} />
 
+      <label>发布平台</label>
+      <select value={value.publishPlatform ?? "short_video"} onChange={updateField("publishPlatform")}>
+        <option value="short_video">短视频平台</option>
+        <option value="xhs">小红书</option>
+      </select>
+
+      <label>模型提供商</label>
+      <select value={value.provider ?? "openai"} onChange={updateField("provider")}>
+        <option value="openai">ChatGPT (OpenAI 兼容)</option>
+        <option value="deepseek">DeepSeek</option>
+      </select>
+
       <label>你的身份</label>
       <input placeholder="门窗厂老板 / 经销商 / 设计师" value={value.persona} onChange={updateField("persona")} />
 
       <label>你想吸引谁</label>
       <input placeholder="门窗渠道商 / 工程客户 / 设计院" value={value.targetCustomer} onChange={updateField("targetCustomer")} />
 
-      <label>受众人群</label>
-      <select value={value.audienceType} onChange={updateField("audienceType")}>
-        <option value="B端">B 端（工程/渠道）</option>
-        <option value="C端">C 端（家装/零售）</option>
-      </select>
+      <input type="hidden" value={value.audienceType} readOnly />
 
       <label>产品关键词（自动带入，可编辑）</label>
       <textarea

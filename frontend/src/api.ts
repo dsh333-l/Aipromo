@@ -6,10 +6,11 @@ import {
   VideoResponse,
   VoiceConfig,
   VideoScript,
-  VideoStatusResponse
+  VideoStatusResponse,
+  XhsResponse
 } from "./types";
 
-const API_BASE = "/api";
+const API_BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "");
 
 const jsonHeaders = {
   "Content-Type": "application/json"
@@ -31,6 +32,8 @@ export async function analyzeProduct(form: AnalysisFormData): Promise<AnalysisRe
       persona: form.persona,
       target_customer: form.targetCustomer,
       audience_type: form.audienceType,
+      provider: form.provider,
+      publish_platform: form.publishPlatform,
       product_keywords: buildKeywords(form.productKeywords),
       additional_context: form.additionalContext
     })
@@ -46,7 +49,8 @@ export async function analyzeProduct(form: AnalysisFormData): Promise<AnalysisRe
 export async function generateScript(
   selectedCard: PainPointCard,
   voice: VoiceConfig,
-  videoStyle: string
+  videoStyle: string,
+  provider?: string
 ): Promise<ScriptResponse> {
   const response = await fetch(`${API_BASE}/api/generate_script`, {
     method: "POST",
@@ -54,7 +58,8 @@ export async function generateScript(
     body: JSON.stringify({
       selected_card: selectedCard,
       voice,
-      video_style: videoStyle
+      video_style: videoStyle,
+      provider
     })
   });
 
@@ -94,6 +99,21 @@ export async function getVideoStatus(videoId: string): Promise<VideoStatusRespon
   });
   if (!response.ok) {
     throw new Error(`查询视频状态失败：${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function generateXhs(selectedCard: PainPointCard, provider?: string): Promise<XhsResponse> {
+  const response = await fetch(`${API_BASE}/api/generate_xhs`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify({
+      selected_card: selectedCard,
+      provider
+    })
+  });
+  if (!response.ok) {
+    throw new Error(`小红书文案生成失败：${response.statusText}`);
   }
   return response.json();
 }

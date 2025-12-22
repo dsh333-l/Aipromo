@@ -8,6 +8,8 @@ from typing import List, Sequence
 
 from ..models import (
     GenerateScriptRequest,
+    GenerateXhsRequest,
+    GenerateXhsResponse,
     MarketingCopy,
     PainPointCard,
     ProductAnalysisRequest,
@@ -21,6 +23,12 @@ from .llm import extract_json_block, llm_client
 SYSTEM_PROMPT = """你是一名资深 ToB 品牌策略师，擅长拆解工厂、供应链、渠道的真实痛点，并生成结构化营销方案。需要保证输出内容可直接落在营销系统中。"""
 
 BRAND_DECLARATION = "瑞明门窗，稳定交付，安全可信，共创增长"
+
+
+def _wrap_brand_tag(text: str) -> str:
+    if BRAND_DECLARATION in text:
+        return text
+    return f"{BRAND_DECLARATION}\n{text}\n{BRAND_DECLARATION}"
 
 ANALYSIS_PROMPT = """输入信息：
 - 产品名称：{product_name}
@@ -73,6 +81,22 @@ SCRIPT_PROMPT = """已选卡片信息：
 - 只生成口播自然表达，不要在 voice_over 里出现 “Scene”/“镜头” 等提示词。
 - 画面描述配合视频风格，但旁白保持连贯口语。
 - 3~5 个分镜即可。"""
+
+XHS_PROMPT = """已选卡片信息：
+- 标题：{title}
+- 场景：{scenario}
+- 痛点：{pain_point}
+- 解决方案：{solution}
+
+请生成适合小红书发布的文案，输出 JSON：
+{{
+  "copies": [
+    "文案1",
+    "文案2"
+  ]
+}}
+
+要求：每条 80-160 字，带 3-5 个话题标签（#），语气真实、口语化，避免夸大。"""
 
 
 PAIN_POINT_PATTERNS = [
@@ -133,7 +157,7 @@ def _build_marketing_copies(title: str, scenario: str, pain_point: str, solution
             pain_point=pain_point,
             solution=solution,
         )
-        copies.append(MarketingCopy(channel=channel, copy=text))
+        copies.append(MarketingCopy(channel=channel, ad_copy=_wrap_brand_tag(text)))
     return copies
 
 
@@ -157,7 +181,7 @@ def _parse_llm_cards(raw_cards: Sequence[dict]) -> List[PainPointCard]:
             copy_text = copy.get("copy") or copy.get("content")
             if not copy_text:
                 continue
-            copies.append(MarketingCopy(channel=channel, copy=copy_text))
+            copies.append(MarketingCopy(channel=channel, ad_copy=copy_text))
 
         if not copies:
             copies = _build_marketing_copies(title, scenario, pain_point, solution)
@@ -169,7 +193,9 @@ def _parse_llm_cards(raw_cards: Sequence[dict]) -> List[PainPointCard]:
                 scenario=scenario,
                 pain_point=pain_point,
                 solution=solution,
-                recommended_copies=[MarketingCopy(channel=c.channel, copy=c.copy) for c in copies],
+                recommended_copies=[
+                    MarketingCopy(channel=c.channel, ad_copy=_wrap_brand_tag(c.ad_copy)) for c in copies
+                ],
             )
         )
     return cards
@@ -217,6 +243,7 @@ def analyze_product(req: ProductAnalysisRequest) -> ProductAnalysisResponse:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.85,
+                provider=req.provider,
             )
             parsed = json.loads(extract_json_block(response.content))
             cards_data = parsed.get("cards", [])
@@ -306,6 +333,7 @@ def generate_video_script(req: GenerateScriptRequest) -> VideoScript:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.8,
+                provider=req.provider,
             )
             parsed = json.loads(extract_json_block(response.content))
             script = _parse_llm_script(parsed)
@@ -325,3 +353,47 @@ def generate_video_script(req: GenerateScriptRequest) -> VideoScript:
             pass
 
     return _fallback_script(req)
+
+
+def generate_xhs_copies(req: GenerateXhsRequest) -> GenerateXhsResponse:
+    prompt = XHS_PROMPT.format(
+        title=req.selected_card.title,
+        scenario=req.selected_card.scenario,
+        pain_point=req.selected_card.pain_point,
+        solution=req.selected_card.solution,
+    )
+
+    if llm_client.is_configured():
+        try:
+            response = llm_client.chat(
+                [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.7,
+                provider=req.provider,
+            )
+            parsed = json.loads(extract_json_block(response.content))
+            copies = parsed.get("copies", [])
+            if isinstance(copies, list) and copies:
+                normalized = [_wrap_brand_tag(str(item)) for item in copies if str(item).strip()]
+                if normalized:
+                    return GenerateXhsResponse(copies=normalized)
+        except Exception:
+            pass
+
+    fallback = [
+        _wrap_brand_tag(
+            f"{req.selected_card.title}：不少合作方都在意{req.selected_card.pain_point}，"
+            f"我们用{req.selected_card.solution}解决关键卡点。#门窗 #工程渠道 #品质交付"
+        ),
+        _wrap_brand_tag(
+            f"{req.selected_card.scenario}正是很多渠道商的真实场景。"
+            f"配置{req.selected_card.solution}后，交付更稳、反馈更快。#门窗厂家 #系统窗 #靠谱供应"
+        ),
+        _wrap_brand_tag(
+            f"如果你也在寻找更稳定的门窗合作伙伴，{req.selected_card.title}这件事我们已经跑通。"
+            f"欢迎交流对标。#门窗品牌 #工程项目 #合作共赢"
+        ),
+    ]
+    return GenerateXhsResponse(copies=fallback)

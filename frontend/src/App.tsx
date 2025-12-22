@@ -2,7 +2,8 @@ import { useMemo, useState, useEffect } from "react";
 import AnalysisPanel from "./components/AnalysisPanel";
 import ProductForm from "./components/ProductForm";
 import VideoConfig from "./components/VideoConfig";
-import { analyzeProduct, generateScript, generateVideo, getVideoStatus } from "./api";
+import XhsPanel from "./components/XhsPanel";
+import { analyzeProduct, generateScript, generateVideo, getVideoStatus, generateXhs } from "./api";
 import {
   AnalysisFormData,
   PainPointCard,
@@ -16,7 +17,9 @@ const defaultForm: AnalysisFormData = {
   persona: "门窗厂老板",
   targetCustomer: "门窗渠道商 / 工程客户",
   audienceType: "B端",
-  productKeywords: WINDOW_MODELS[0]?.keywords.join("\n") || "铝合金门窗"
+  productKeywords: WINDOW_MODELS[0]?.keywords.join("\n") || "铝合金门窗",
+  provider: "openai",
+  publishPlatform: "short_video",
 };
 
 const defaultVoice: VoiceConfig = {
@@ -47,6 +50,9 @@ function App() {
   const [jobId, setJobId] = useState<string | undefined>();
   const [videoStatus, setVideoStatus] = useState<string | undefined>();
   const [isPolling, setIsPolling] = useState(false);
+  const [xhsCopies, setXhsCopies] = useState<string[]>([]);
+  const [selectedXhsIndex, setSelectedXhsIndex] = useState<number | null>(null);
+  const [isXhsLoading, setIsXhsLoading] = useState(false);
   const buildWindowContext = (model: (typeof WINDOW_MODELS)[number]) => {
     const specLines = [
       `窗型：${model.windowType}`,
@@ -92,6 +98,7 @@ function App() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const canProceedToVideo = useMemo(() => !!selectedCard, [selectedCard]);
+  const isXhs = formData.publishPlatform === "xhs";
 
   const handleAnalyze = async () => {
     let formForRequest = formData;
@@ -117,6 +124,8 @@ function App() {
       setAudioUrl(undefined);
       setJobId(undefined);
       setVideoStatus(undefined);
+      setXhsCopies([]);
+      setSelectedXhsIndex(null);
 
       const response = await analyzeProduct(formForRequest);
       setCards(response.cards);
@@ -136,6 +145,8 @@ function App() {
     setAudioUrl(undefined);
     setJobId(undefined);
     setVideoStatus(undefined);
+    setXhsCopies([]);
+    setSelectedXhsIndex(null);
   };
 
   const toggleSave = (cardId: string) => {
@@ -152,13 +163,32 @@ function App() {
     try {
       setIsScriptLoading(true);
       setErrorMessage(undefined);
-      const response = await generateScript(selectedCard, voiceConfig, videoStyle);
+      const response = await generateScript(selectedCard, voiceConfig, videoStyle, formData.provider);
       setScript(response.script);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setErrorMessage(message);
     } finally {
       setIsScriptLoading(false);
+    }
+  };
+
+  const generateXhsCopies = async () => {
+    if (!selectedCard) {
+      setErrorMessage("请先采纳一条文案。");
+      return;
+    }
+    try {
+      setIsXhsLoading(true);
+      setErrorMessage(undefined);
+      const response = await generateXhs(selectedCard, formData.provider);
+      setXhsCopies(response.copies);
+      setSelectedXhsIndex(0);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setErrorMessage(message);
+    } finally {
+      setIsXhsLoading(false);
     }
   };
 
@@ -229,23 +259,33 @@ function App() {
       />
 
       {currentStep === 3 ? (
-        <VideoConfig
-          voice={voiceConfig}
-          videoStyle={videoStyle}
-          onVoiceChange={setVoiceConfig}
-          onVideoStyleChange={setVideoStyle}
-          onGenerateScript={ensureScript}
-          onGenerateVideo={generateVideoAssets}
-          script={script}
-          generatingScript={isScriptLoading}
-          generatingVideo={isVideoLoading}
-          videoUrl={videoUrl}
-          audioUrl={audioUrl}
-          jobId={jobId}
-          videoStatus={videoStatus}
-          onPollStatus={() => jobId && pollVideoStatus(jobId)}
-          isPolling={isPolling}
-        />
+        isXhs ? (
+          <XhsPanel
+            copies={xhsCopies}
+            generating={isXhsLoading}
+            onGenerate={generateXhsCopies}
+            selectedIndex={selectedXhsIndex}
+            onSelect={(index) => setSelectedXhsIndex(index)}
+          />
+        ) : (
+          <VideoConfig
+            voice={voiceConfig}
+            videoStyle={videoStyle}
+            onVoiceChange={setVoiceConfig}
+            onVideoStyleChange={setVideoStyle}
+            onGenerateScript={ensureScript}
+            onGenerateVideo={generateVideoAssets}
+            script={script}
+            generatingScript={isScriptLoading}
+            generatingVideo={isVideoLoading}
+            videoUrl={videoUrl}
+            audioUrl={audioUrl}
+            jobId={jobId}
+            videoStatus={videoStatus}
+            onPollStatus={() => jobId && pollVideoStatus(jobId)}
+            isPolling={isPolling}
+          />
+        )
       ) : (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
           <AnalysisPanel
@@ -254,10 +294,11 @@ function App() {
             onSelect={selectCard}
             onToggleSave={toggleSave}
             isLoading={isAnalyzing}
+            publishPlatform={formData.publishPlatform}
           />
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button className="primary" onClick={jumpToVideoStep} disabled={!canProceedToVideo}>
-              下一步：选择配音
+              {isXhs ? "下一步：生成小红书文案" : "下一步：选择配音"}
             </button>
           </div>
         </div>

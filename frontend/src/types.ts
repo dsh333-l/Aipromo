@@ -7,11 +7,14 @@ export interface AnalysisFormData {
   audienceType: AudienceType;
   productKeywords: string;
   additionalContext?: string;
+  provider?: string;
+  publishPlatform?: "short_video" | "xhs";
 }
 
 export interface MarketingCopy {
   channel: string;
-  copy: string;
+  ad_copy?: string;
+  copy?: string;
 }
 
 export interface PainPointCard {
@@ -63,4 +66,8 @@ export interface VideoStatusResponse {
   status: string;
   video_url?: string;
   raw?: Record<string, unknown>;
+}
+
+export interface XhsResponse {
+  copies: string[];
 }
