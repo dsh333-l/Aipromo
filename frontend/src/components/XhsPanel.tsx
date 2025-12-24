@@ -20,9 +20,14 @@ export function XhsPanel({ copies, generating, onGenerate, selectedIndex, onSele
       </div>
 
       <h2 className="section-title">小红书发布文案</h2>
-      <p style={{ marginTop: 0, color: "#475569", fontSize: 13 }}>
-        生成后可选择一条作为最终发布文案。
-      </p>
+      <div className="panel-intro">
+        <p className="subtitle">生成后可选择一条作为最终发布文案，支持直接复制发布。</p>
+        <div className="meta">
+          <span className="chip">口语化表达</span>
+          <span className="chip">3-5 个话题标签</span>
+          <span className="chip">品牌宣言收尾</span>
+        </div>
+      </div>
 
       <div className="cta-footer" style={{ justifyContent: "flex-start" }}>
         <button className="primary" onClick={onGenerate} disabled={generating}>
@@ -30,27 +35,26 @@ export function XhsPanel({ copies, generating, onGenerate, selectedIndex, onSele
         </button>
       </div>
 
-      {copies.length > 0 && (
-        <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
-          {copies.map((copy, index) => (
+      {copies.length > 0 ? (
+        <div className="xhs-grid" style={{ marginTop: 16 }}>
+          {copies.slice(0, 5).map((copy, index) => (
             <div
               key={`${index}-${copy.slice(0, 10)}`}
-              style={{
-                borderRadius: 14,
-                padding: 14,
-                border: selectedIndex === index ? "2px solid #1e5bff" : "1px solid #e2e8f0",
-                background: "#ffffff",
-                boxShadow: "0 10px 24px rgba(15, 45, 120, 0.12)",
-              }}
+              className={`xhs-card ${selectedIndex === index ? "selected" : ""}`}
               onClick={() => onSelect(index)}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div className="title">
                 <strong>文案 {index + 1}</strong>
                 {selectedIndex === index && <span className="chip">已选择</span>}
               </div>
               <p style={{ margin: 0, whiteSpace: "pre-line", lineHeight: 1.6 }}>{copy}</p>
             </div>
           ))}
+        </div>
+      ) : (
+        <div className="xhs-empty">
+          <p style={{ margin: 0, fontWeight: 600 }}>暂无文案</p>
+          <p style={{ margin: "6px 0 0", fontSize: 13 }}>点击“生成小红书文案”获取可发布的内容。</p>
         </div>
       )}
     </div>

@@ -16,6 +16,8 @@ interface VideoConfigProps {
   videoStatus?: string;
   onPollStatus: () => void;
   isPolling: boolean;
+  selectedCopyIndex: number;
+  onSelectCopy: (index: number) => void;
   disabled?: boolean;
 }
 
@@ -35,6 +37,8 @@ export function VideoConfig({
   videoStatus,
   onPollStatus,
   isPolling,
+  selectedCopyIndex,
+  onSelectCopy,
   disabled
 }: VideoConfigProps) {
   const updateVoice = (key: keyof VoiceConfig) => (event: React.ChangeEvent<HTMLSelectElement>) =>
@@ -91,7 +95,7 @@ export function VideoConfig({
 
       <div className="cta-footer" style={{ justifyContent: "flex-start", gap: 12 }}>
         <button className="secondary" onClick={onGenerateScript} disabled={generatingScript || disabled}>
-          {generatingScript ? "生成脚本中..." : "生成分镜脚本"}
+          {generatingScript ? "生成文案中..." : "生成视频文案"}
         </button>
         <button className="primary" onClick={onGenerateVideo} disabled={generatingVideo || !script || disabled}>
           {generatingVideo ? "视频生成中..." : "生成预览视频"}
@@ -117,27 +121,27 @@ export function VideoConfig({
       {script && (
         <div style={{ marginTop: 24, background: "#0f172a", color: "#e2e8f0", borderRadius: 16, padding: 20 }}>
           <h3 style={{ marginTop: 0, marginBottom: 12 }}>{script.headline}</h3>
-          <ol style={{ margin: 0, paddingLeft: 18 }}>
-            {script.scenes.map((scene) => (
-              <li key={scene.id} style={{ marginBottom: 16 }}>
-                <strong>{scene.title}</strong>
-                <div style={{ fontSize: 14, lineHeight: 1.6 }}>
-                  <p style={{ margin: "4px 0" }}>
-                    <strong>画面：</strong>
-                    {scene.visuals}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    <strong>旁白：</strong>
-                    {scene.voice_over}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    <strong>屏幕文字：</strong>
-                    {scene.screen_text}
-                  </p>
+          <div style={{ display: "grid", gap: 12 }}>
+            {script.scenes.slice(0, 3).map((scene, index) => (
+              <div
+                key={scene.id}
+                style={{
+                  borderRadius: 14,
+                  padding: 14,
+                  border: selectedCopyIndex === index ? "2px solid #1e5bff" : "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.04)",
+                  cursor: "pointer",
+                }}
+                onClick={() => onSelectCopy(index)}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <strong>文案 {index + 1}</strong>
+                  {selectedCopyIndex === index && <span className="chip">已选择</span>}
                 </div>
-              </li>
+                <p style={{ margin: 0, lineHeight: 1.7, whiteSpace: "pre-line" }}>{scene.voice_over}</p>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
       )}
 

@@ -45,6 +45,7 @@ function App() {
   const [videoStyle, setVideoStyle] = useState("工厂实力展示");
 
   const [script, setScript] = useState<VideoScript | undefined>();
+  const [selectedVideoCopyIndex, setSelectedVideoCopyIndex] = useState<number>(0);
   const [videoUrl, setVideoUrl] = useState<string | undefined>();
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
   const [jobId, setJobId] = useState<string | undefined>();
@@ -147,6 +148,7 @@ function App() {
     setVideoStatus(undefined);
     setXhsCopies([]);
     setSelectedXhsIndex(null);
+    setSelectedVideoCopyIndex(0);
   };
 
   const toggleSave = (cardId: string) => {
@@ -165,9 +167,12 @@ function App() {
       setErrorMessage(undefined);
       const response = await generateScript(selectedCard, voiceConfig, videoStyle, formData.provider);
       setScript(response.script);
+      setSelectedVideoCopyIndex(0);
+      return response.script;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setErrorMessage(message);
+      return undefined;
     } finally {
       setIsScriptLoading(false);
     }
@@ -193,16 +198,19 @@ function App() {
   };
 
   const generateVideoAssets = async () => {
-    if (!script) {
-      await ensureScript();
-    }
-    if (!selectedCard || !script) {
+    const scriptResult = script || (await ensureScript());
+    if (!selectedCard || !scriptResult) {
       return;
     }
+    const scene = scriptResult.scenes[selectedVideoCopyIndex] || scriptResult.scenes[0];
+    const scriptForVideo: VideoScript = {
+      headline: scriptResult.headline,
+      scenes: scene ? [scene] : [],
+    };
     try {
       setIsVideoLoading(true);
       setErrorMessage(undefined);
-      const response = await generateVideo(script, voiceConfig, videoStyle);
+      const response = await generateVideo(scriptForVideo, voiceConfig, videoStyle);
       setVideoUrl(response.video_url);
       setAudioUrl(response.audio_url);
       setJobId(response.job_id);
@@ -284,6 +292,8 @@ function App() {
             videoStatus={videoStatus}
             onPollStatus={() => jobId && pollVideoStatus(jobId)}
             isPolling={isPolling}
+            selectedCopyIndex={selectedVideoCopyIndex}
+            onSelectCopy={setSelectedVideoCopyIndex}
           />
         )
       ) : (

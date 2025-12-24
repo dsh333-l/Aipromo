@@ -21,7 +21,7 @@ class LLMClient:
     def __init__(self) -> None:
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-        self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self.model = os.getenv("OPENAI_MODEL", "gpt-5.2")
         self.timeout = float(os.getenv("OPENAI_TIMEOUT", "45"))
 
     def is_configured(self) -> bool:

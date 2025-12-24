@@ -22,7 +22,7 @@ from .llm import extract_json_block, llm_client
 
 SYSTEM_PROMPT = """你是一名资深 ToB 品牌策略师，擅长拆解工厂、供应链、渠道的真实痛点，并生成结构化营销方案。需要保证输出内容可直接落在营销系统中。"""
 
-BRAND_DECLARATION = "瑞明门窗，稳定交付，安全可信，共创增长"
+BRAND_DECLARATION = ""
 
 
 def _wrap_brand_tag(text: str) -> str:
@@ -55,32 +55,57 @@ ANALYSIS_PROMPT = """输入信息：
 
 请返回 3~4 条卡片，语言口语化且聚焦生意场景。"""
 
-SCRIPT_PROMPT = """已选卡片信息：
+SCRIPT_PROMPT = """
+你是资深短视频编导 + 资深广告文案（擅长 60-90 秒口播转化）。
+请根据“已选卡片信息”和“视频/配音设定”，生成 3 条长文案的中文口播文案。
+你的输出必须是严格可解析的 JSON（不要代码块，不要多余说明）。
+
+【已选卡片信息】
 - 标题：{title}
 - 场景：{scenario}
 - 痛点：{pain_point}
 - 解决方案：{solution}
 
-视频风格：{video_style}
-配音设定：{voice_language} · {voice_style} · {age_group}
+【视频设定】
+- 视频风格：{video_style}
+- 配音设定：{voice_language} · {voice_style} · {age_group}
+
+【受众假设】
+- 受众是谁：{audience}（如果未提供，默认“对该场景有明确需求的人”）
+- 他们最在意：省钱 / 省时间 / 更简单 / 更稳定 / 更体面（从 pain_point 推断优先级）
+
+【统一硬性要求】
+1) 每条口播时长约 60-90 秒（约 240-360 个中文字符为主，可略浮动）。
+2) 开头前 1-2 句必须是强钩子：反常识/戳痛点/提问/数字/对比/真实小尴尬，任选其一。
+3) 全程像聊天：短句、多口语连接词（比如“说真的/你有没有/其实/我之前也/关键是”）。
+4) 不要出现“Scene/镜头/画面/旁白提示”等制作提示词；不要出现“大家好我是XX”这种过度模板。
+5) 不能夸张承诺（例如“100%有效”“立刻治好”“永久解决”）；避免绝对化用语。
+6) 结尾必须有轻量 CTA：引导“评论关键词/私信/点链接/收藏/试一次”，但不要硬广腔。
+
+【3条文案差异化规则（必须严格执行）】
+- 文案1：痛点共鸣型（把痛点说透，说到“我就是这样”）
+- 文案2：对比反差型（用“传统做法 vs 这个方案”的对比）
+- 文案3：故事真实型（一个小故事：我/朋友/客户，前后变化）
+
+【每条文案推荐结构（写作时遵循，但不要显式写出结构词）】
+钩子 → 具体场景 → 痛点加深（1-2个细节）→ 解决方案亮相 → 关键好处（3点以内）→ 轻量 CTA
+
+【质量自检（生成前在脑内检查，不要输出检查过程）】
+- 是否够口语？读起来像人在说吗？
+- 是否具体？有没有“细节画面感”（场景里的小动作/小尴尬/小代价）？
+- 5条是否明显不同？是否没有重复句式和同一个开头套路？
+- 是否只输出 JSON？是否无多余文本？
 
 请输出 JSON：
-{{
-  "headline": "脚本标题",
-  "scenes": [
-    {{
-      "title": "Scene 1",
-      "visuals": "画面描述 + 调度",
-      "voice_over": "口播文案，符合配音语言，完整自然，不要出现“Scene”/镜头编号等提示词",
-      "screen_text": "屏幕文字或字幕"
-    }}
-  ]
+{{ "headline": "文案标题",
+  "copies": 
+[ "口播文案1", 
+  "口播文案2", 
+  "口播文案3" ] 
 }}
 
-要求：
-- 只生成口播自然表达，不要在 voice_over 里出现 “Scene”/“镜头” 等提示词。
-- 画面描述配合视频风格，但旁白保持连贯口语。
-- 3~5 个分镜即可。"""
+"""
+
 
 XHS_PROMPT = """已选卡片信息：
 - 标题：{title}
@@ -92,11 +117,14 @@ XHS_PROMPT = """已选卡片信息：
 {{
   "copies": [
     "文案1",
-    "文案2"
+    "文案2",
+    "文案3",
+    "文案4",
+    "文案5"
   ]
 }}
 
-要求：每条 80-160 字，带 3-5 个话题标签（#），语气真实、口语化，避免夸大。"""
+要求：必须输出 5 条，每条 80-160 字，带 3-5 个话题标签（#），语气真实、口语化，避免夸大。"""
 
 
 PAIN_POINT_PATTERNS = [
@@ -258,9 +286,47 @@ def analyze_product(req: ProductAnalysisRequest) -> ProductAnalysisResponse:
 
 
 def _parse_llm_script(data: dict) -> VideoScript | None:
-    headline = data.get("headline")
+    headline = data.get("headline") or "视频口播文案"
+
+    # 优先支持单段口播文案
+    full_voice = data.get("voice_over") or data.get("voiceOver")
+    if isinstance(full_voice, str) and full_voice.strip():
+        cleaned = full_voice.replace("Scene", "").replace("镜头", "").strip("：: ").strip()
+        return VideoScript(
+            headline=headline,
+            scenes=[
+                Scene(
+                    id=1,
+                    title="口播文案",
+                    visuals="口播视频",
+                    voice_over=cleaned,
+                    screen_text=textwrap.shorten(headline, 32),
+                )
+            ],
+        )
+
+    copies_raw = data.get("copies")
+    if isinstance(copies_raw, list) and copies_raw:
+        scenes: List[Scene] = []
+        for idx, item in enumerate(copies_raw, start=1):
+            text = str(item).strip()
+            if not text:
+                continue
+            cleaned = text.replace("Scene", "").replace("镜头", "").strip("：: ").strip()
+            scenes.append(
+                Scene(
+                    id=idx,
+                    title=f"文案 {idx}",
+                    visuals="口播视频",
+                    voice_over=cleaned,
+                    screen_text=textwrap.shorten(headline, 32),
+                )
+            )
+        if scenes:
+            return VideoScript(headline=headline, scenes=scenes[:3])
+
     scenes_raw = data.get("scenes")
-    if not (headline and isinstance(scenes_raw, list)):
+    if not isinstance(scenes_raw, list):
         return None
 
     scenes: List[Scene] = []
@@ -291,26 +357,39 @@ def _parse_llm_script(data: dict) -> VideoScript | None:
 
 def _fallback_script(req: GenerateScriptRequest) -> VideoScript:
     card = req.selected_card
-    style_hints = VIDEO_STYLE_HINTS.get(req.video_style, VIDEO_STYLE_HINTS["商务路演风"])
-    scenes: List[Scene] = []
-    for idx, hint in enumerate(style_hints, start=1):
-        voice_over = {
-            1: f"最近不少 {card.title} 项目的渠道伙伴都提到：{card.pain_point}",
-            2: f"我们用方案「{card.solution}」做到了：{card.scenario}",
-            3: f"想了解你所在场景如何落地，欢迎和我们聊聊，支持打样/联合共创。",
-        }.get(idx, f"{card.solution}，满足 {card.scenario}")
+    hooks = [
+        f"如果你还在为「{card.pain_point}」头疼，先听我说一句。",
+        f"做门窗的朋友注意了，{card.pain_point}其实有更稳的解法。",
+        f"不少渠道伙伴都在问：{card.pain_point}到底怎么解决？",
+    ]
+    bodies = [
+        f"{card.scenario} 是我们经常听到的真实反馈。"
+        f"很多项目一开始就栽在细节和流程上，表面看是工期问题，实则是标准与协同没对齐。"
+        f"我们用「{card.solution}」把关键环节跑通，让交付更稳、沟通更快。"
+        f"从选材到装配，再到现场交付的节点，都能做到“有依据、有节奏、有复盘”。",
+        f"传统做法往往是每个环节都在补救，越补越乱。"
+        f"我们把方案核心拆成三点：稳定交付、标准一致、响应更快，落地抓手就是「{card.solution}」。"
+        f"这样一来，项目进度更可控，返工风险明显降低，客户体验也更稳定。",
+        f"我举个真实小故事：之前有个工程客户就卡在{card.pain_point}上，"
+        f"预算、时间、人力都被消耗。我们帮他重新梳理流程，用「{card.solution}」做了改造，"
+        f"结果交付周期缩短、沟通成本下降，后续项目就轻松很多。",
+    ]
+    tail = "想知道具体怎么落地？留言或私信聊一聊。"
 
+    scenes: List[Scene] = []
+    for idx in range(3):
+        voice_over = _wrap_brand_tag(f"{hooks[idx]} {bodies[idx]} {tail}")
         scenes.append(
             Scene(
-                id=idx,
-                title=f"Scene {idx}",
-                visuals=hint,
+                id=idx + 1,
+                title=f"文案 {idx + 1}",
+                visuals=req.video_style,
                 voice_over=voice_over,
                 screen_text=textwrap.shorten(card.solution, width=36, placeholder="..."),
             )
         )
 
-    headline = f"{card.title} - {req.video_style}"
+    headline = f"{card.title} - 口播文案"
     return VideoScript(headline=headline, scenes=scenes)
 
 
@@ -325,6 +404,7 @@ def generate_video_script(req: GenerateScriptRequest) -> VideoScript:
             voice_language=req.voice.language,
             voice_style=req.voice.voice_style,
             age_group=req.voice.age_group,
+            audience="对该场景有明确需求的人",
         )
         try:
             response = llm_client.chat(
@@ -338,15 +418,19 @@ def generate_video_script(req: GenerateScriptRequest) -> VideoScript:
             parsed = json.loads(extract_json_block(response.content))
             script = _parse_llm_script(parsed)
             if script:
+                fallback_scenes = _fallback_script(req).scenes
+                scenes = script.scenes
+                if len(scenes) < 5:
+                    scenes = scenes + fallback_scenes[len(scenes):5]
                 wrapped = [
                     Scene(
                         id=s.id,
                         title=s.title,
                         visuals=s.visuals,
-                        voice_over=s.voice_over,
+                        voice_over=_wrap_brand_tag(s.voice_over),
                         screen_text=s.screen_text,
                     )
-                    for s in script.scenes
+                    for s in scenes
                 ]
                 return VideoScript(headline=script.headline, scenes=wrapped)
         except Exception:
@@ -363,6 +447,17 @@ def generate_xhs_copies(req: GenerateXhsRequest) -> GenerateXhsResponse:
         solution=req.selected_card.solution,
     )
 
+    def normalize_copies(raw: List[str]) -> List[str]:
+        cleaned = [_wrap_brand_tag(str(item)) for item in raw if str(item).strip()]
+        while len(cleaned) < 5:
+            cleaned.append(
+                _wrap_brand_tag(
+                    f"{req.selected_card.title}：{req.selected_card.solution}已在多个项目验证，"
+                    f"欢迎交流适配场景。#门窗 #系统窗 #工程渠道"
+                )
+            )
+        return cleaned[:5]
+
     if llm_client.is_configured():
         try:
             response = llm_client.chat(
@@ -376,13 +471,12 @@ def generate_xhs_copies(req: GenerateXhsRequest) -> GenerateXhsResponse:
             parsed = json.loads(extract_json_block(response.content))
             copies = parsed.get("copies", [])
             if isinstance(copies, list) and copies:
-                normalized = [_wrap_brand_tag(str(item)) for item in copies if str(item).strip()]
-                if normalized:
-                    return GenerateXhsResponse(copies=normalized)
+                normalized = normalize_copies(copies)
+                return GenerateXhsResponse(copies=normalized)
         except Exception:
             pass
 
-    fallback = [
+    fallback = normalize_copies([
         _wrap_brand_tag(
             f"{req.selected_card.title}：不少合作方都在意{req.selected_card.pain_point}，"
             f"我们用{req.selected_card.solution}解决关键卡点。#门窗 #工程渠道 #品质交付"
@@ -395,5 +489,5 @@ def generate_xhs_copies(req: GenerateXhsRequest) -> GenerateXhsResponse:
             f"如果你也在寻找更稳定的门窗合作伙伴，{req.selected_card.title}这件事我们已经跑通。"
             f"欢迎交流对标。#门窗品牌 #工程项目 #合作共赢"
         ),
-    ]
+    ])
     return GenerateXhsResponse(copies=fallback)
