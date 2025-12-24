@@ -61,6 +61,12 @@ export interface VideoResponse {
   status?: string;
 }
 
+export interface HeygenAvatarOption {
+  id: string;
+  name: string;
+  image: string;
+}
+
 export interface VideoStatusResponse {
   job_id: string;
   status: string;

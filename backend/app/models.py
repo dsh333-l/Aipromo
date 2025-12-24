@@ -102,6 +102,7 @@ class GenerateVideoRequest(BaseModel):
     script: VideoScript
     voice: VoiceConfig
     video_style: str
+    avatar_id: Optional[str] = None
 
 
 class GenerateVideoResponse(BaseModel):

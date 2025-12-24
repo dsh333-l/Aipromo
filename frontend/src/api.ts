@@ -73,7 +73,8 @@ export async function generateScript(
 export async function generateVideo(
   script: VideoScript,
   voice: VoiceConfig,
-  videoStyle: string
+  videoStyle: string,
+  avatarId?: string
 ): Promise<VideoResponse> {
   const response = await fetch(`${API_BASE}/api/generate_video`, {
     method: "POST",
@@ -81,7 +82,8 @@ export async function generateVideo(
     body: JSON.stringify({
       script,
       voice,
-      video_style: videoStyle
+      video_style: videoStyle,
+      avatar_id: avatarId
     })
   });
 

@@ -213,6 +213,43 @@ textarea {
   text-align: center;
 }
 
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.avatar-tab {
+  display: grid;
+  gap: 8px;
+  align-items: center;
+  justify-items: center;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #d6e0f4;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f2d78;
+  box-shadow: 0 10px 20px rgba(15, 45, 120, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+}
+
+.avatar-tab img {
+  width: 100%;
+  max-width: 220px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #e6ecfa;
+  padding: 8px;
+}
+
+.avatar-tab.active {
+  border: 2px solid #1e5bff;
+  box-shadow: 0 16px 30px rgba(30, 91, 255, 0.25);
+}
+
 .chip {
   display: inline-flex;
   align-items: center;

@@ -18,6 +18,9 @@ interface VideoConfigProps {
   isPolling: boolean;
   selectedCopyIndex: number;
   onSelectCopy: (index: number) => void;
+  avatars: { id: string; name: string; image: string }[];
+  selectedAvatarId: string;
+  onSelectAvatar: (id: string) => void;
   disabled?: boolean;
 }
 
@@ -39,6 +42,9 @@ export function VideoConfig({
   isPolling,
   selectedCopyIndex,
   onSelectCopy,
+  avatars,
+  selectedAvatarId,
+  onSelectAvatar,
   disabled
 }: VideoConfigProps) {
   const updateVoice = (key: keyof VoiceConfig) => (event: React.ChangeEvent<HTMLSelectElement>) =>
@@ -56,33 +62,24 @@ export function VideoConfig({
         <span className="step-pill active">Step 3 · 视频生成</span>
       </div>
 
-      <h2 className="section-title">配音 & 视频风格设置</h2>
+      <h2 className="section-title">选择 HeyGen 形象</h2>
+      <div style={{ marginBottom: 16 }}>
+        <div className="avatar-grid">
+          {avatars.map((avatar) => (
+            <button
+              key={avatar.id}
+              type="button"
+              className={`avatar-tab ${selectedAvatarId === avatar.id ? "active" : ""}`}
+              onClick={() => onSelectAvatar(avatar.id)}
+              disabled={disabled}
+            >
+              <img src={avatar.image} alt={avatar.name} />
+              <span>{avatar.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-        <div>
-          <label>配音语言</label>
-          <select value={voice.language} onChange={updateVoice("language")} disabled={disabled}>
-            <option value="中文普通话">中文普通话</option>
-            <option value="粤语">粤语</option>
-            <option value="英语">英语</option>
-          </select>
-        </div>
-        <div>
-          <label>声线</label>
-          <select value={voice.voice_style} onChange={updateVoice("voice_style")} disabled={disabled}>
-            <option value="女声">女声</option>
-            <option value="男声">男声</option>
-            <option value="青年">青年</option>
-            <option value="中年">中年</option>
-          </select>
-        </div>
-        <div>
-          <label>年龄段</label>
-          <select value={voice.age_group} onChange={updateVoice("age_group")} disabled={disabled}>
-            <option value="青年">青年</option>
-            <option value="中年">中年</option>
-            <option value="成熟">成熟</option>
-          </select>
-        </div>
         <div>
           <label>视频风格</label>
           <select value={videoStyle} onChange={(event) => onVideoStyleChange(event.target.value)} disabled={disabled}>

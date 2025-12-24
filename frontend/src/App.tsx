@@ -6,6 +6,7 @@ import XhsPanel from "./components/XhsPanel";
 import { analyzeProduct, generateScript, generateVideo, getVideoStatus, generateXhs } from "./api";
 import {
   AnalysisFormData,
+  HeygenAvatarOption,
   PainPointCard,
   VoiceConfig,
   VideoScript
@@ -28,6 +29,19 @@ const defaultVoice: VoiceConfig = {
   age_group: "青年"
 };
 
+const AVATARS: HeygenAvatarOption[] = [
+  {
+    id: "Miyu_standing_office_front",
+    name: "Miyu · 站立办公",
+    image: "/avatars/miyu.png",
+  },
+  {
+    id: "Ren_sitting_office_front",
+    name: "Ren · 坐姿办公",
+    image: "/avatars/ren.png",
+  },
+];
+
 type Step = 1 | 2 | 3;
 
 function App() {
@@ -43,6 +57,7 @@ function App() {
 
   const [voiceConfig, setVoiceConfig] = useState<VoiceConfig>(defaultVoice);
   const [videoStyle, setVideoStyle] = useState("工厂实力展示");
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string>(AVATARS[0]?.id || "");
 
   const [script, setScript] = useState<VideoScript | undefined>();
   const [selectedVideoCopyIndex, setSelectedVideoCopyIndex] = useState<number>(0);
@@ -210,7 +225,7 @@ function App() {
     try {
       setIsVideoLoading(true);
       setErrorMessage(undefined);
-      const response = await generateVideo(scriptForVideo, voiceConfig, videoStyle);
+      const response = await generateVideo(scriptForVideo, voiceConfig, videoStyle, selectedAvatarId);
       setVideoUrl(response.video_url);
       setAudioUrl(response.audio_url);
       setJobId(response.job_id);
@@ -294,6 +309,9 @@ function App() {
             isPolling={isPolling}
             selectedCopyIndex={selectedVideoCopyIndex}
             onSelectCopy={setSelectedVideoCopyIndex}
+            avatars={AVATARS}
+            selectedAvatarId={selectedAvatarId}
+            onSelectAvatar={setSelectedAvatarId}
           />
         )
       ) : (

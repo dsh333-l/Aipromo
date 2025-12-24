@@ -38,7 +38,7 @@ def _build_heygen_payload(req: GenerateVideoRequest) -> dict:
     if BRAND_DECLARATION:
         full_text = f"{full_text}\n{BRAND_DECLARATION}"
 
-    avatar_id = os.getenv("HEYGEN_AVATAR_ID", "Miyu_standing_office_front")
+    avatar_id = req.avatar_id or os.getenv("HEYGEN_AVATAR_ID", "Miyu_standing_office_front")
     avatar_style = os.getenv("HEYGEN_AVATAR_STYLE", "normal")
     voice_id = os.getenv("HEYGEN_VOICE_ID", "119caed25533477ba63822d5d1552d25")
 
